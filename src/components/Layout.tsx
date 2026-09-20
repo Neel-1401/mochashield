@@ -1,14 +1,24 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { type ReactNode } from 'react'
 import { useSimulation } from '../context/SimulationContext'
 import { NUM } from '../lib/theme'
 import { statusStyles } from '../lib/simulation'
 
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `text-[12px] transition-colors ${
-    isActive ? 'text-[#f2ebe3]' : 'text-[#6b635c] hover:text-[#9a9086]'
-  }`
+export type AppPage = 'overview' | 'markets' | 'risk' | 'incidents'
 
-export function Layout() {
+const NAV_ITEMS: { id: AppPage; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'markets', label: 'Markets' },
+  { id: 'risk', label: 'Risk' },
+  { id: 'incidents', label: 'Incidents' },
+]
+
+type LayoutProps = {
+  activePage: AppPage
+  onNavigate: (page: AppPage) => void
+  children: ReactNode
+}
+
+export function Layout({ activePage, onNavigate, children }: LayoutProps) {
   const { stageLabel, displayStatus, isCrisis } = useSimulation()
 
   return (
@@ -24,19 +34,24 @@ export function Layout() {
                 Market Risk & Crash Response
               </div>
             </div>
-            <div className="hidden items-center gap-6 sm:flex">
-              <NavLink to="/" end className={linkClass}>
-                Overview
-              </NavLink>
-              <NavLink to="/markets" className={linkClass}>
-                Markets
-              </NavLink>
-              <NavLink to="/risk" className={linkClass}>
-                Risk
-              </NavLink>
-              <NavLink to="/incidents" className={linkClass}>
-                Incidents
-              </NavLink>
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+              {NAV_ITEMS.map((item) => {
+                const isActive = activePage === item.id
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onNavigate(item.id)}
+                    className={`text-[12px] transition-colors ${
+                      isActive
+                        ? 'text-[#f2ebe3]'
+                        : 'text-[#6b635c] hover:text-[#9a9086]'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -52,9 +67,7 @@ export function Layout() {
         </div>
       </nav>
 
-      <div className="mx-auto max-w-[1440px] px-6 py-8">
-        <Outlet />
-      </div>
+      <div className="mx-auto max-w-[1440px] px-6 py-8">{children}</div>
     </div>
   )
 }

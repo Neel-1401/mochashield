@@ -1,27 +1,28 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { Layout } from './components/Layout'
+import { useState } from 'react'
+import { Layout, type AppPage } from './components/Layout'
 import { SimulationProvider } from './context/SimulationContext'
 import { IncidentsPage } from './pages/IncidentsPage'
 import { MarketsPage } from './pages/MarketsPage'
 import { OverviewPage } from './pages/OverviewPage'
 import { RiskPage } from './pages/RiskPage'
 
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+function AppShell() {
+  const [activePage, setActivePage] = useState<AppPage>('overview')
+
+  return (
+    <Layout activePage={activePage} onNavigate={setActivePage}>
+      {activePage === 'overview' && <OverviewPage />}
+      {activePage === 'markets' && <MarketsPage />}
+      {activePage === 'risk' && <RiskPage />}
+      {activePage === 'incidents' && <IncidentsPage />}
+    </Layout>
+  )
+}
 
 export default function App() {
   return (
     <SimulationProvider>
-      <BrowserRouter basename={basename === '/' ? undefined : basename}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<OverviewPage />} />
-            <Route path="markets" element={<MarketsPage />} />
-            <Route path="risk" element={<RiskPage />} />
-            <Route path="incidents" element={<IncidentsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <AppShell />
     </SimulationProvider>
   )
 }
