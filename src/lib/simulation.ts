@@ -482,3 +482,211 @@ export function protocolStatusColor(status: ProtocolStatus): string {
       return 'text-[#a3b18a]'
   }
 }
+
+export type IncidentEvent = {
+  id: string
+  atMs: number
+  clock: string
+  message: string
+}
+
+export type RiskTrigger = {
+  id: string
+  label: string
+  level: 'ok' | 'warn' | 'critical'
+}
+
+export type ComponentStatus = 'NORMAL' | 'ELEVATED' | 'HIGH' | 'CRITICAL'
+
+export function scoreStatus(score: number): ComponentStatus {
+  if (score >= 75) return 'CRITICAL'
+  if (score >= 60) return 'HIGH'
+  if (score >= 40) return 'ELEVATED'
+  return 'NORMAL'
+}
+
+export function riskExplanation(
+  key: keyof Omit<RiskBreakdown, 'overall' | 'status'>,
+  score: number,
+): string {
+  const critical = score >= 75
+  switch (key) {
+    case 'market':
+      return critical
+        ? 'Market shock and volatility have breached safe operating bands.'
+        : score >= 40
+          ? 'Price shock and volume stress are elevating market risk.'
+          : 'Market conditions remain within simulated normal range.'
+    case 'liquidity':
+      return critical
+        ? 'Liquidity has fallen below the safe threshold.'
+        : score >= 40
+          ? 'Spreads are widening and available depth is thinning.'
+          : 'Liquidity conditions are adequate for simulated flow.'
+    case 'leverage':
+      return critical
+        ? 'Average leverage is unsustainably high for current volatility.'
+        : score >= 40
+          ? 'Leverage is elevated relative to platform risk appetite.'
+          : 'Leverage sits within the configured simulation envelope.'
+    case 'liquidation':
+      return critical
+        ? 'A large share of positions are near liquidation thresholds.'
+        : score >= 40
+          ? 'Margin pressure is rising across leveraged accounts.'
+          : 'Liquidation proximity remains within tolerance.'
+    case 'concentration':
+      return critical
+        ? 'Directional concentration creates cascade amplification risk.'
+        : score >= 40
+          ? 'Exposure is skewed toward one side of the book.'
+          : 'Portfolio balance is within simulated limits.'
+    case 'priceFeed':
+      return critical
+        ? 'Price-feed divergence may invalidate liquidation marks.'
+        : score >= 40
+          ? 'Feed sources are beginning to disagree on marks.'
+          : 'Price feeds are aligned within tolerance.'
+  }
+}
+
+export function buildRiskTriggers(
+  risk: RiskBreakdown,
+  conditions: MarketConditions,
+): RiskTrigger[] {
+  return [
+    {
+      id: 'vol',
+      label: 'Volatility threshold exceeded',
+      level: conditions.volatilitySpike > 100 ? 'critical' : conditions.volatilitySpike > 60 ? 'warn' : 'ok',
+    },
+    {
+      id: 'liq',
+      label: 'Liquidity below threshold',
+      level: risk.liquidity > 60 ? 'critical' : risk.liquidity > 40 ? 'warn' : 'ok',
+    },
+    {
+      id: 'lev',
+      label: 'High leverage exposure',
+      level: risk.leverage > 60 ? 'critical' : risk.leverage > 40 ? 'warn' : 'ok',
+    },
+    {
+      id: 'feed',
+      label: 'Price-feed divergence',
+      level: conditions.priceFeedDivergence > 1 ? 'critical' : conditions.priceFeedDivergence > 0.5 ? 'warn' : 'ok',
+    },
+    {
+      id: 'liqpos',
+      label: 'Positions near liquidation',
+      level:
+        conditions.positionsNearLiquidation > 20
+          ? 'critical'
+          : conditions.positionsNearLiquidation > 12
+            ? 'warn'
+            : 'ok',
+    },
+    {
+      id: 'conc',
+      label: 'Concentration imbalance',
+      level: risk.concentration > 45 ? 'warn' : 'ok',
+    },
+  ]
+}
+
+export function stageIncidentMessages(stage: SimStage): string[] {
+  switch (stage) {
+    case 'NORMAL':
+      return ['Market shock detected']
+    case 'VOLATILITY SPIKE':
+      return ['Volatility spike detected']
+    case 'LIQUIDITY STRESS':
+      return ['Liquidity stress detected']
+    case 'LIQUIDATION PRESSURE':
+      return ['Liquidation risk increased']
+    case 'CRISIS':
+      return ['Crisis threshold reached', 'Incident response teams escalated']
+    case 'DAMAGE CONTROL':
+      return ['Damage-control protocols engaged']
+    case 'STABILIZATION':
+      return ['Market stabilized']
+    default:
+      return []
+  }
+}
+
+export function formatSimClock(atMs: number, baseHour = 10, baseMin = 42): string {
+  const totalSec = Math.floor(atMs / 1000)
+  const s = totalSec % 60
+  const m = (baseMin + Math.floor(totalSec / 60)) % 60
+  const h = baseHour + Math.floor((baseMin + Math.floor(totalSec / 60)) / 60)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+export type AssetRiskStatus = 'STABLE' | 'WATCH' | 'AT RISK' | 'CRITICAL'
+
+export type AssetSnapshot = {
+  ticker: string
+  price: number
+  changePct: number
+  volatility: 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME'
+  liquidity: number
+  volumeSpike: number
+  openInterestChange: number
+  longShortRatio: number
+  status: AssetRiskStatus
+  liquidationRisk: number
+  exposure: number
+}
+
+export function computeAssetSnapshot(
+  ticker: string,
+  base: number,
+  shockMult: number,
+  conditions: MarketConditions,
+  crashed: boolean,
+): AssetSnapshot {
+  const shock = crashed ? conditions.marketPriceShock * shockMult : 0
+  const idleDrift = ticker === 'NVDA' ? 2.4 : ticker === 'AAPL' ? 0.44 : ticker === 'GOLD' ? 0.2 : -0.3
+  const changePct = crashed ? Math.round(shock * 10) / 10 : idleDrift
+  const price = Math.round(base * (1 + changePct / 100) * 100) / 100
+
+  const volScore = conditions.volatilitySpike * (0.7 + shockMult * 0.3)
+  const volatility: AssetSnapshot['volatility'] =
+    volScore >= 220 ? 'EXTREME' : volScore >= 140 ? 'HIGH' : volScore >= 70 ? 'MODERATE' : 'LOW'
+
+  const liquidity = clamp(100 + conditions.liquidityDrop - shockMult * 8, 5, 100)
+  const volumeSpike = clamp(conditions.tradingVolumeSpike * (0.8 + shockMult * 0.25), 0, 500)
+  const openInterestChange = clamp(
+    conditions.openInterestChange + (crashed ? shockMult * 15 : 0),
+    -50,
+    100,
+  )
+  const longShare = conditions.longExposure / 100
+  const shortShare = 1 - longShare
+  const longShortRatio = Math.round((longShare / Math.max(shortShare, 0.05)) * 100) / 100
+
+  const liquidationRisk = clamp(
+    conditions.positionsNearLiquidation * shockMult * 1.2 + Math.abs(changePct) * 1.5,
+    0,
+    100,
+  )
+
+  let status: AssetRiskStatus = 'STABLE'
+  if (liquidationRisk >= 55 || Math.abs(changePct) >= 12) status = 'CRITICAL'
+  else if (liquidationRisk >= 35 || Math.abs(changePct) >= 7) status = 'AT RISK'
+  else if (liquidationRisk >= 18 || volatility === 'HIGH' || volatility === 'EXTREME') status = 'WATCH'
+
+  return {
+    ticker,
+    price,
+    changePct,
+    volatility,
+    liquidity: round(liquidity),
+    volumeSpike: round(volumeSpike),
+    openInterestChange: round(openInterestChange),
+    longShortRatio,
+    status,
+    liquidationRisk: round(liquidationRisk),
+    exposure: round(conditions.longExposure * shockMult),
+  }
+}
