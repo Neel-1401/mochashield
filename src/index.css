@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b0908;
+  --bg-elevated: #12100e;
+  --bg-card: #151210;
+  --bg-card-hover: #1a1613;
+  --border: #2a2420;
+  --border-subtle: #1f1b18;
+  --accent: #c96a3d;
+  --accent-bright: #e07840;
+  --accent-dim: #8f4a2a;
+  --text: #f2ebe3;
+  --text-muted: #9a9086;
+  --text-dim: #6b635c;
+  --warn: #d97706;
+  --danger: #c43c2b;
+  --ok: #a3b18a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "DM Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.font-display {
+  font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+/* Atmospheric shell */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 106, 61, 0.12), transparent 55%),
+    radial-gradient(ellipse 40% 30% at 90% 20%, rgba(196, 60, 43, 0.05), transparent 50%),
+    radial-gradient(ellipse 35% 25% at 10% 60%, rgba(201, 106, 61, 0.04), transparent 50%),
+    var(--bg);
+  color: var(--text);
+}
+
+.app-shell::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+.app-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell.crisis-glow {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(196, 60, 43, 0.16), transparent 55%),
+    radial-gradient(ellipse 40% 30% at 85% 30%, rgba(201, 106, 61, 0.08), transparent 50%),
+    var(--bg);
+}
+
+/* Trading-terminal range inputs */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: #2a2420;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2420;
+  border-radius: 0;
+}
